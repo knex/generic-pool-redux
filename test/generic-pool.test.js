@@ -6,8 +6,8 @@ module.exports = {
     'expands to max limit' : function (beforeExit) {
         var createCount  = 0;
         var destroyCount = 0;
-        var borrowCount  = 0;
-        
+        var acquireCount  = 0;
+
         var factory = {
             name     : 'test1',
             create   : function(callback) {
@@ -25,7 +25,7 @@ module.exports = {
                 return function(err, obj) {
                     assert.equal(typeof obj.count, 'number');
                     setTimeout(function() {
-                        borrowCount++;
+                        acquireCount++;
                         pool.release(obj);
                     }, 100);
                 };
@@ -34,17 +34,17 @@ module.exports = {
         }
 
         beforeExit(function() {
-            assert.equal(0, factory.min);
+            assert.equal(0, pool.min);
             assert.equal(2, createCount);
             assert.equal(2, destroyCount);
-            assert.equal(10, borrowCount);
+            assert.equal(10, acquireCount);
         });
     },
-    
+
     'respects min limit' : function (beforeExit) {
         var createCount  = 0;
         var destroyCount = 0;
-        var borrowCount  = 0;
+        var acquireCount  = 0;
 
         var pool = poolModule.Pool({
             name     : 'test-min',
@@ -59,12 +59,12 @@ module.exports = {
         pool.drain();
 
         beforeExit(function() {
-            assert.equal(0, pool.availableObjectsCount());
+            assert.equal(0, pool.availableObjects.length);
             assert.equal(1, createCount);
             assert.equal(1, destroyCount);
         });
     },
-    
+
     'min and max limit defaults' : function (beforeExit) {
       var factory = {
         name    : "test-limit-defaults",
@@ -73,13 +73,13 @@ module.exports = {
         idleTimeoutMillis: 100
       };
       var pool = poolModule.Pool(factory);
-      
+
       beforeExit(function() {
-        assert.equal(1, factory.max);
-        assert.equal(0, factory.min);
+        assert.equal(1, pool.max);
+        assert.equal(0, pool.min);
       });
     },
-    
+
     'malformed min and max limits are ignored' : function (beforeExit) {
       var factory = {
         name    : "test-limit-defaults2",
@@ -90,13 +90,13 @@ module.exports = {
         max : [ ]
       };
       var pool = poolModule.Pool(factory);
-      
+
       beforeExit(function() {
-        assert.equal(1, factory.max);
-        assert.equal(0, factory.min);
+        assert.equal(1, pool.max);
+        assert.equal(0, pool.min);
       });
     },
-    
+
     'min greater than max sets to max minus one' : function (beforeExit) {
       var factory = {
         name    : "test-limit-defaults3",
@@ -108,17 +108,17 @@ module.exports = {
       };
       var pool = poolModule.Pool(factory);
       pool.drain();
-      
+
       beforeExit(function() {
-        assert.equal(3, factory.max);
-        assert.equal(2, factory.min);
+        assert.equal(3, pool.max);
+        assert.equal(2, pool.min);
       });
     },
 
-    'supports priority on borrow' : function(beforeExit) {
-        var borrowTimeLow  = 0;
-        var borrowTimeHigh = 0;
-        var borrowCount = 0;
+    'supports priority on acquire' : function(beforeExit) {
+        var acquireTimeLow  = 0;
+        var acquireTimeHigh = 0;
+        var acquireCount = 0;
         var i;
 
         var pool = poolModule.Pool({
@@ -135,8 +135,8 @@ module.exports = {
                 return function() {
                     setTimeout(function() {
                         var t = new Date().getTime();
-                        if (t > borrowTimeLow) { borrowTimeLow = t; }
-                        borrowCount++;
+                        if (t > acquireTimeLow) { acquireTimeLow = t; }
+                        acquireCount++;
                         pool.release(obj);
                     }, 50);
                 };
@@ -148,8 +148,8 @@ module.exports = {
                 return function() {
                     setTimeout(function() {
                         var t = new Date().getTime();
-                        if (t > borrowTimeHigh) { borrowTimeHigh = t; }
-                        borrowCount++;
+                        if (t > acquireTimeHigh) { acquireTimeHigh = t; }
+                        acquireCount++;
                         pool.release(obj);
                     }, 50);
                 };
@@ -157,8 +157,8 @@ module.exports = {
         }
 
         beforeExit(function() {
-            assert.equal(20, borrowCount);
-            assert.equal(true, borrowTimeLow > borrowTimeHigh);
+            assert.equal(20, acquireCount);
+            assert.equal(true, acquireTimeLow > acquireTimeHigh);
         });
     },
 
@@ -237,7 +237,7 @@ module.exports = {
                 if (created < 5) {
                     callback(new Error('Error occurred.'));
                 } else {
-                    callback({ id : created });
+                    callback(null, { id : created });
                 }
                 created++;
             },
@@ -261,7 +261,7 @@ module.exports = {
         });
         beforeExit(function() {
             assert.ok(called);
-            assert.equal(pool.waitingClientsCount(), 0);
+            assert.equal(pool.waitingClients.size(), 0);
         });
     },
 
@@ -276,7 +276,7 @@ module.exports = {
                     }, 0);
                 } else {
                     setTimeout(function() {
-                        callback({ id : created });
+                        callback(null, { id : created });
                     }, 0);
                 }
                 created++;
@@ -300,7 +300,7 @@ module.exports = {
         });
         beforeExit(function() {
             assert.ok(called);
-            assert.equal(pool.waitingClientsCount(), 0);
+            assert.equal(pool.waitingClients.size(), 0);
         });
     },
 
@@ -309,7 +309,7 @@ module.exports = {
         var destroyed_count = 0;
         var pool = poolModule.Pool({
             name     : 'test1',
-            create   : function(callback) { callback({id: Math.floor(Math.random()*1000)}); },
+            create   : function(callback) { callback(null, {id: Math.floor(Math.random()*1000)}); },
             destroy  : function(client) { destroyed_count += 1; },
             max : 1,
             idleTimeoutMillis : 100
@@ -317,12 +317,12 @@ module.exports = {
 
         var pooledFn = pool.pooled(function(client, cb) {
           assert.equal(typeof client.id, 'number');
-          assert.equal(pool.getPoolSize(), 1);
+          assert.equal(pool.count, 1);
           assertion_count += 2;
           cb();
         });
 
-        assert.equal(pool.getPoolSize(), 0);
+        assert.equal(pool.count, 0);
         assertion_count += 1;
 
         pooledFn(function(err) {
@@ -333,15 +333,15 @@ module.exports = {
 
         beforeExit(function() {
           assert.equal(assertion_count, 4);
-          assert.equal(destroyed_count, 1); 
+          assert.equal(destroyed_count, 1);
         });
     },
-    
+
     'pooled decorator should pass arguments and return values' : function(beforeExit) {
         var assertion_count = 0;
         var pool = poolModule.Pool({
             name     : 'test1',
-            create   : function(callback) { callback({id: Math.floor(Math.random()*1000)}); },
+            create   : function(callback) { callback(null, {id: Math.floor(Math.random()*1000)}); },
             destroy  : function(client) { },
             max : 1,
             idleTimeoutMillis : 100
@@ -370,7 +370,7 @@ module.exports = {
         var assertion_count = 0;
         var pool = poolModule.Pool({
             name     : 'test1',
-            create   : function(callback) { callback({id: Math.floor(Math.random()*1000)}); },
+            create   : function(callback) { callback(null, {id: Math.floor(Math.random()*1000)}); },
             destroy  : function(client) { },
             max : 1,
             idleTimeoutMillis : 100
@@ -385,7 +385,7 @@ module.exports = {
         pooledFn("Arg!");
 
         beforeExit(function() {
-          assert.equal(pool.getPoolSize(), 0);
+          assert.equal(pool.count, 0);
           assert.equal(assertion_count, 1);
         });
 
@@ -419,21 +419,21 @@ module.exports = {
         var assertion_count = 0;
         var pool = poolModule.Pool({
             name     : 'test1',
-            create   : function(callback) { callback({id: Math.floor(Math.random()*1000)}); },
+            create   : function(callback) { callback(null, {id: Math.floor(Math.random()*1000)}); },
             destroy  : function(client) { },
             max : 2,
             idleTimeoutMillis : 100
         });
 
-        assert.equal(pool.getPoolSize(), 0);
+        assert.equal(pool.count, 0);
         assertion_count += 1;
         pool.acquire(function(err, obj1) {
             if (err) { throw err; }
-            assert.equal(pool.getPoolSize(), 1);
+            assert.equal(pool.count, 1);
             assertion_count += 1;
             pool.acquire(function(err, obj2) {
                 if (err) { throw err; }
-                assert.equal(pool.getPoolSize(), 2);
+                assert.equal(pool.count, 2);
                 assertion_count += 1;
 
                 pool.release(obj1);
@@ -442,7 +442,7 @@ module.exports = {
                 pool.acquire(function(err, obj3) {
                     if (err) { throw err; }
                     // should still be 2
-                    assert.equal(pool.getPoolSize(), 2);
+                    assert.equal(pool.count, 2);
                     assertion_count += 1;
                     pool.release(obj3);
                 });
@@ -454,43 +454,43 @@ module.exports = {
         });
     },
 
-    'availableObjectsCount' : function (beforeExit) {
+    'availableObjects.length' : function (beforeExit) {
         var assertion_count = 0;
         var pool = poolModule.Pool({
             name     : 'test1',
-            create   : function(callback) { callback({id: Math.floor(Math.random()*1000)}); },
+            create   : function(callback) { callback(null, {id: Math.floor(Math.random()*1000)}); },
             destroy  : function(client) { },
             max : 2,
             idleTimeoutMillis : 100
         });
 
-        assert.equal(pool.availableObjectsCount(), 0);
+        assert.equal(pool.availableObjects.length, 0);
         assertion_count += 1;
         pool.acquire(function(err, obj1) {
             if (err) { throw err; }
-            assert.equal(pool.availableObjectsCount(), 0);
+            assert.equal(pool.availableObjects.length, 0);
             assertion_count += 1;
 
             pool.acquire(function(err, obj2) {
                 if (err) { throw err; }
-                assert.equal(pool.availableObjectsCount(), 0);
+                assert.equal(pool.availableObjects.length, 0);
                 assertion_count += 1;
 
                 pool.release(obj1);
-                assert.equal(pool.availableObjectsCount(), 1);
+                assert.equal(pool.availableObjects.length, 1);
                 assertion_count += 1;
 
                 pool.release(obj2);
-                assert.equal(pool.availableObjectsCount(), 2);
+                assert.equal(pool.availableObjects.length, 2);
                 assertion_count += 1;
 
                 pool.acquire(function(err, obj3) {
                     if (err) { throw err; }
-                    assert.equal(pool.availableObjectsCount(), 1);
+                    assert.equal(pool.availableObjects.length, 1);
                     assertion_count += 1;
                     pool.release(obj3);
 
-                    assert.equal(pool.availableObjectsCount(), 2);
+                    assert.equal(pool.availableObjects.length, 2);
                     assertion_count += 1;
                 });
             });
@@ -501,46 +501,6 @@ module.exports = {
         });
     },
 
-    'logPassesLogLevel': function(beforeExit){
-        var loglevels = {'verbose':0, 'info':1, 'warn':2, 'error':3};
-        var logmessages = {verbose:[], info:[], warn:[], error:[]};
-        var factory = {
-            name     : 'test1',
-            create   : function(callback) {callback(null, {id:Math.floor(Math.random()*1000)}); },
-            destroy  : function(client) {},
-            max      : 2,
-            idleTimeoutMillis: 100,
-            log      : function(msg, level) {testlog(msg, level);}
-        };
-        var testlog = function(msg, level){
-            assert.ok(level in loglevels);
-            logmessages[level].push(msg);
-        };
-        var pool = poolModule.Pool(factory);
-
-        var pool2 = poolModule.Pool({
-            name     : 'testNoLog',
-            create   : function(callback) {callback(null, {id:Math.floor(Math.random()*1000)}); },
-            destroy  : function(client) {},
-            max      : 2,
-            idleTimeoutMillis: 100
-        });
-        assert.equal(pool2.getName(), 'testNoLog');
-
-        pool.acquire(function(err, obj){
-          if (err) {throw err;}
-          assert.equal(logmessages.verbose[0], 'createResource() - creating obj - count=1 min=0 max=2');
-          assert.equal(logmessages.info[0], 'dispense() clients=1 available=0');
-          logmessages.info = [];
-          logmessages.verbose = [];
-          pool2.borrow(function(err, obj){
-            assert.equal(logmessages.info.length, 0);
-            assert.equal(logmessages.verbose.length, 0);
-            assert.equal(logmessages.warn.length, 0);
-          });
-        });
-    },
-    
     'removes from available objects on destroy': function(beforeExit){
         var destroyCalled = false;
         var factory = {
@@ -553,10 +513,10 @@ module.exports = {
 
         var pool = poolModule.Pool(factory);
         pool.acquire(function(err, obj){
-            pool.destroy(obj);            
+            pool.destroy(obj);
         });
         assert.equal(destroyCalled, true);
-        assert.equal(pool.availableObjectsCount(), 0);        
+        assert.equal(pool.availableObjects.length, 0);
     },
 
     'removes from available objects on validation failure': function(beforeExit){
@@ -584,7 +544,7 @@ module.exports = {
         });
         assert.equal(validateCalled, true);
         assert.equal(destroyCalled, 0);
-        assert.equal(pool.availableObjectsCount(), 1);
+        assert.equal(pool.availableObjects.length, 1);
     },
 
     'do schedule again if error occured when creating new Objects async': function(beforeExit){
@@ -593,8 +553,8 @@ module.exports = {
             create: function(callback) {
               process.nextTick(function(){
                 var err = new Error('Create Error');
-                callback(err); 
-              })
+                callback(err);
+              });
             },
             destroy: function(client) {},
             max: 1,
@@ -607,11 +567,11 @@ module.exports = {
         pool.acquire(function(err, obj){
            getFlag = 1;
            assert(err);
-           assert.equal(pool.availableObjectsCount(), 0);        
+           assert.equal(pool.availableObjects.length, 0);
        });
 
        beforeExit(function() {
-         assert.equal(getFlag, 1);   
+         assert.equal(getFlag, 1);
        });
     }
 

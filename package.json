@@ -1,8 +1,8 @@
 {
-  "name": "generic-pool",
+  "name": "generic-pool-redux",
   "description": "Generic resource pooling for Node.JS",
   "version": "2.0.4",
-  "author": "James Cooper <james@bitmechanic.com>",
+  "author": "Tim Griesser <tgriesser@gmail.com>",
   "contributors": [
     { "name": "James Cooper", "email": "james@bitmechanic.com" },
     { "name": "Peter Galiba", "email": "poetro@poetro.hu", "url": "http://poetro.hu/" },
