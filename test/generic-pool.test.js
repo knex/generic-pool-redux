@@ -144,7 +144,7 @@ module.exports = {
         }
 
         for (i = 0; i < 10; i++) {
-            pool.acquire(function(obj) {
+            pool.acquire(function(err, obj) {
                 return function() {
                     setTimeout(function() {
                         var t = new Date().getTime();
@@ -224,9 +224,9 @@ module.exports = {
         });
 
         // subsequent calls to acquire should return an error.
-        assert.throws(function() {
-            pool.acquire(function(client) {});
-        }, Error);
+        pool.acquire(function(err, client) {
+            assert.ok(err instanceof Error);
+        });
     },
 
     'handle creation errors' : function (beforeExit) {
