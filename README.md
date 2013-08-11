@@ -2,6 +2,8 @@
 Forked from [generic pool](https://github.com/coopernurse/node-pool), it can be used to reuse or throttle
 expensive resources such as database connections.
 
+[![Build Status](https://travis-ci.org/bookshelf/generic-pool-redux.png?branch=master)](https://travis-ci.org/bookshelf/generic-pool-redux)
+
 ## Example
 
 ### Step 1 - Create pool using a factory object
