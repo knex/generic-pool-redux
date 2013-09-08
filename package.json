@@ -1,10 +1,10 @@
 {
   "name": "generic-pool-redux",
-  "description": "Generic resource pooling for Node.JS",
+  "description": "Generic resource pooling in Javascript",
   "version": "1.0.0",
   "author": "Tim Griesser <tgriesser@gmail.com>",
   "keywords": ["pool", "pooling", "throttle"],
-  "main": "lib/generic-pool.js",
+  "main": "generic-pool.js",
   "repository": {
     "type": "git",
     "url": "http://github.com/bookshelf/generic-pool-redux.git"

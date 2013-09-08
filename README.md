@@ -198,8 +198,11 @@ publicTop = pool.pooled(privateTop = function(client, cb) {
     $ npm install expresso
     $ expresso -I lib test/*.js
 
+## Generic Pool Redux
 
-## History
+    1.0.0 -
+
+## Generic Pool History (old fork)
 
     2.0.4 - July 27 2013
        - Merged #64 - Fix for not removing idle objects (contributed by PiotrWpl)

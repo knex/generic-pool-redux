@@ -4,7 +4,9 @@
 // with prototypes, api changes, and support for the client.
 // License: MIT
 // ------------------------------------------------
-(function(define) { "use strict";
+(function(define) {
+
+"use strict";
 
 define(function(require, exports, module) {
 
