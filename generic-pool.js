@@ -68,7 +68,6 @@ define(function(require, exports, module) {
   // Constructor for a new pool.
   var Pool = function(options) {
     if (!(this instanceof Pool)) return new Pool(options);
-    this.name              = options.name;
     this.idleTimeoutMillis = options.idleTimeoutMillis  || 30000;
     this.reapInterval      = options.reapIntervalMillis || 1000;
     this.destroyHandler    = options.destroy || function() {};
