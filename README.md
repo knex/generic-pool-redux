@@ -202,7 +202,8 @@ publicTop = pool.pooled(privateTop = function(client, cb) {
 
 ## Generic Pool Redux
 
-    1.0.0 -
+    0.1.0 - Sepember 13 2013
+        - Rewriting the API to use prototypes, remove logging, added a callback on release, for consistency.
 
 ## Generic Pool History (old fork)
 
