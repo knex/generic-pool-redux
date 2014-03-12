@@ -5,6 +5,8 @@
 // License: MIT
 // ------------------------------------------------
 
+var EventEmitter = require('events').EventEmitter;
+
 // Initialize arrays to hold queue elements.
 var PriorityQueue = function(size) {
   this.slots = [];
@@ -107,7 +109,7 @@ Pool.prototype = {
   // available resources.  Lower numbers mean higher priority.
   acquire: function(callback, priority) {
     if (this.draining) return callback(new Error("Pool is draining and cannot accept work"));
-    this.waitingClients.enqueue(callback, priority);
+    this.waitingClients.enqueue({callback: callback, domain: process.domain}, priority);
     this.dispense();
     return (this.count < this.max);
   },
@@ -121,6 +123,11 @@ Pool.prototype = {
       if (callback) callback(new Error('Release called multiple times on the same object'));
       return;
     }
+
+    if (obj instanceof EventEmitter && obj.domain) {
+        obj.domain.remove(obj);
+    }
+
     var objWithTimeout = {
       obj: obj,
       timeout: (new Date().getTime() + this.idleTimeoutMillis)
@@ -143,6 +150,7 @@ Pool.prototype = {
     var obj = null,
       objWithTimeout = null,
       err = null,
+      clientItem = null,
       clientCb = null,
       waitingCount = this.waitingClients.size();
 
@@ -154,7 +162,14 @@ Pool.prototype = {
           continue;
         }
         this.availableObjects.shift();
-        clientCb = this.waitingClients.dequeue();
+
+        clientItem = this.waitingClients.dequeue();
+        clientCb = clientItem.callback;
+
+        if (objWithTimeout.obj instanceof EventEmitter && clientItem.domain) {
+            clientItem.domain.add(objWithTimeout.obj);
+        }
+
         return clientCb(err, objWithTimeout.obj);
       }
       if (this.count < this.max) {
@@ -281,7 +296,13 @@ Pool.prototype = {
     var pool = this;
     this.count += 1;
     this.create(function(err, obj) {
-      var clientCb = pool.waitingClients.dequeue();
+      var clientItem = pool.waitingClients.dequeue() || {};
+      var clientCb = clientItem.callback;
+
+      if (obj instanceof EventEmitter && clientItem.domain) {
+        clientItem.domain.add(obj);
+      }
+
       if (err) {
         pool.count -= 1;
         if (clientCb) clientCb(err, null);
