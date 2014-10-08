@@ -82,7 +82,7 @@ var Pool = function(options) {
   var max = parseInt(options.max, 10);
   var min = parseInt(options.min, 10);
   this.max = Math.max(isNaN(max) ? 1 : max, 1);
-  this.min = Math.min(isNaN(min) ? 0 : min, this.max - 1);
+  this.min = Math.min(isNaN(min) ? 0 : min, this.max);
 
   // Ensure the minimum is created.
   this.ensureMinimum();
