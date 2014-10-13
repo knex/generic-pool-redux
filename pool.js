@@ -188,6 +188,7 @@ Pool.prototype = {
       if (pool.waitingClients.size() > 0 || pool.availableObjects.length != pool.count) {
         setTimeout(checking, 100);
       } else {
+        pool.draining = false;
         if (callback) callback();
       }
     };
