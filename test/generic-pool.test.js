@@ -118,7 +118,7 @@ module.exports = {
         });
     },
 
-    'min greater than max sets to max minus one': function(beforeExit) {
+    'min greater than max sets to max': function(beforeExit) {
         var factory = {
             name: "test-limit-defaults3",
             create: function(callback) {
@@ -134,7 +134,7 @@ module.exports = {
 
         beforeExit(function() {
             assert.equal(3, pool.max);
-            assert.equal(2, pool.min);
+            assert.equal(3, pool.min);
         });
     },
 
