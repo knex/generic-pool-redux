@@ -241,10 +241,13 @@ Pool.prototype = {
   // will also be called. This should be called within an acquire()
   // block as an alternative to release().
   destroy: function(obj) {
-    this.count -= 1;
     this.availableObjects = this.availableObjects.filter(function(objWithTimeout) {
-      return (objWithTimeout.obj !== obj);
-    });
+      if (objWithTimeout.obj === obj) {
+        this.count -= 1;
+        return false;
+      }
+      return true;
+    }.bind(this));
     this.destroyHandler(obj);
     this.ensureMinimum();
   },
